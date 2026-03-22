@@ -1,0 +1,153 @@
+CROP DISEASE DATASET MERGING SUMMARY
+Date: 10 March 2026
+
+1. PROJECT OVERVIEW
+The objective was to merge two distinct crop disease image datasets into a single, balanced dataset with a maximum of 1,000 images per class, prioritizing high-quality and original sources.
+
+2. DATASET DESCRIPTIONS
+- Dataset 1 (PlantVillage - Low): Contained approximately 20,639 unique images across 15 classes.
+- Dataset 2 (Large Dataset - High): A massive collection of 162,916 images divided into 'color', 'grayscale', and 'segmented' versions of 38 classes.
+
+3. ISSUES IDENTIFIED
+During the research phase, several structural and data integrity issues were found:
+- Nested Duplicates: Dataset 1 contained a nested 'PlantVillage' folder which was an exact duplicate of the root data.
+- Redundant Data: Dataset 2 contained grayscale and segmented versions of images which were not required for this specific color-based detection task.
+- Naming Inconsistencies: The two datasets used slightly different folder naming conventions (e.g., "Tomato_Bacterial_spot" vs "Tomato___Bacterial_spot"), which could have led to duplicate classes in the merged output.
+- Class Imbalance: Some classes had as few as 152 images, while others had over 5,000.
+
+4. SOLUTION & METHODOLOGY
+The following steps were taken to resolve the issues and merge the data:
+- Filtering: Explicitly ignored the nested folder in Dataset 1 and the grayscale/segmented folders in Dataset 2.
+- Normalization: Used a name-cleaning algorithm to match classes between datasets regardless of underscores, commas, or spacing.
+- Prioritization: Implemented a "Dataset 1 First" rule. Images were copied from Dataset 1 until the 1,000-image limit was reached or the source was exhausted.
+- Topping Up: If a class had fewer than 1,000 images in Dataset 1, it was supplemented with images from Dataset 2.
+- Unique Class Addition: Classes present only in Dataset 2 were added with a 1,000-image limit.
+- Conflict Resolution: A manual fix was applied to consolidate "Tomato Spider Mites" after a naming collision was detected during the final count.
+
+5. FINAL OUTPUT SUMMARY
+- Total Classes: 38
+- Total Images: 32,538
+- Target Limit: 1,000 images per class (where available)
+
+Classes with less than 1,000 images (due to source limitations):
+- Apple (Scab, Black rot, Cedar rust)
+- Cherry (healthy)
+- Corn (Cercospora, Northern Blight)
+- Grape (healthy)
+- Peach (healthy)
+- Potato (healthy)
+- Raspberry (healthy)
+- Strawberry (healthy)
+- Tomato (Mosaic virus)
+
+All other 26 classes were successfully populated with exactly 1,000 images.
+All original files remain untouched in their original directories.
+
+
+6. MODEL TRAINING PIPELINE
+6.1 Training Objective
+The objective of the training phase was to develop a robust deep learning model capable of automatically identifying crop diseases from leaf images. The model was trained using a transfer learning approach to leverage knowledge from large-scale visual datasets and adapt it for crop disease classification.
+The final model was trained on the merged dataset containing 32,538 images across 38 classes.
+
+6.2 Training Environment
+The model was trained using the following environment:
+ComponentSpecificationPlatformGoogle ColabGPUNVIDIA Tesla T4FrameworkPyTorchImage ProcessingTorchvisionTraining MethodTransfer LearningModel ArchitectureEfficientNet-B0Using Google Colab allowed the training process to utilize GPU acceleration, significantly reducing training time compared to CPU-based training.
+
+6.3 Model Architecture
+The model architecture used for training was EfficientNet-B0, a convolutional neural network designed for efficient image classification.
+EfficientNet models are known for:
+* High accuracy with fewer parameters
+* Efficient scaling of depth, width, and resolution
+* Strong performance on transfer learning tasks
+The model was initialized with pretrained weights from ImageNet, allowing it to reuse previously learned visual features such as:
+* edges
+* textures
+* shapes
+* patterns
+These features are highly transferable to plant disease identification.
+
+6.4 Transfer Learning Strategy
+Instead of training the network from scratch, a transfer learning strategy was applied.
+Steps used:
+1. Load EfficientNet-B0 with pretrained ImageNet weights.
+2. Freeze all base convolutional layers.
+3. Replace the final classifier head.
+4. Train only the newly added classification layers on the crop disease dataset.
+The custom classifier head used was:
+Dropout (0.3)
+Linear (1280 ? 512)
+ReLU Activation
+Dropout (0.2)
+Linear (512 ? 38 classes)
+This approach significantly reduces training time and improves convergence with limited datasets.
+
+6.5 Data Preprocessing
+Images were preprocessed using standard transformations consistent with ImageNet-trained models.
+Preprocessing steps:
+1. Resize images to 224 × 224 pixels
+2. Convert image to tensor
+3. Normalize using ImageNet statistics
+Normalization values used:
+Mean: [0.485, 0.456, 0.406]
+Std : [0.229, 0.224, 0.225]
+
+6.6 Data Augmentation
+To improve generalization and compensate for classes with fewer images, data augmentation techniques were applied during training.
+Augmentation operations included:
+* Random horizontal flipping
+* Random vertical flipping
+* Random rotation (±15 degrees)
+* Color jitter adjustments (brightness, contrast, saturation)
+These transformations artificially increased the diversity of training samples and reduced the risk of overfitting.
+
+6.7 Dataset Splitting
+The merged dataset was split into training and validation sets.
+Dataset SplitImagesTraining26,031Validation6,507Validation data was used to monitor the model's performance during training.
+
+6.8 Training Configuration
+The following training parameters were used:
+ParameterValueEpochs15Batch Size32Learning Rate0.0001OptimizerAdamLoss FunctionCrossEntropyLossLR SchedulerStepLR (gamma = 0.5 every 5 epochs)
+6.9 Training Checkpoint System
+To prevent loss of training progress due to potential interruptions in the cloud environment, a checkpoint system was implemented.
+After each epoch:
+* Model weights were saved
+* Optimizer state was saved
+* Training history was stored
+Checkpoint naming format:
+checkpoint_epoch_1.pth
+checkpoint_epoch_2.pth
+...
+checkpoint_epoch_15.pth
+If training stopped unexpectedly, it could automatically resume from the latest checkpoint.
+
+6.10 Training Results
+The model showed steady improvement during training.
+EpochTrain AccuracyValidation Accuracy168.04%88.44%591.40%94.84%1093.02%95.31%1593.61%96.07%Final model performance:
+Best Validation Accuracy: 96.07%
+This level of accuracy indicates strong classification capability for the dataset used.
+
+6.11 Model Output
+The trained model predicts:
+* Disease class
+* Confidence score
+Example output:
+Predicted Class: Tomato Early Blight
+Confidence: 0.96
+
+6.12 Model Artifact
+The final trained model was saved as:
+crop_disease_final.pth
+This file contains:
+* trained model weights
+* class labels
+* training configuration
+The model can be loaded later for inference or API deployment.
+
+6.13 Next Development Phase
+After training, the next step is to integrate the model into an inference pipeline and backend service.
+Planned components include:
+* Inference script
+* REST API (FastAPI)
+* Frontend image upload interface
+* Real-time crop disease prediction
+

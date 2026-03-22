@@ -1,3 +1,11 @@
+---
+title: Plant Disease API
+emoji: 🌿
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+---
 # Plant Disease Detection System
 
 A complete web application designed to classify and detect plant diseases from images using a deep learning model.

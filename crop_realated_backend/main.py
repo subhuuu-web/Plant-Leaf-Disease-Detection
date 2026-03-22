@@ -30,6 +30,16 @@ except Exception as e:
     predictor = None
 
 
+@app.get("/")
+async def root():
+    return {
+        "status": "success", 
+        "message": "Plant Disease Image Classification API is running flawlessly!",
+        "interactive_docs": "Add /docs to the URL to view the live dashboard",
+        "prediction_endpoint": "POST /predict"
+    }
+
+
 @app.post("/predict")
 async def generate_prediction(file: UploadFile = File(...)):
     """

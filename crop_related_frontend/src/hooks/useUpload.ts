@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 
 // ⬇️ Change this to your FastAPI backend URL
-const API_ENDPOINT = "http://localhost:8000/predict";
+const API_ENDPOINT = "https://subhwhoo36-plantdisease.hf.space/predict";
 
 export interface PredictionResult {
   disease: string;
